@@ -505,7 +505,7 @@ class BaseRecord(object):
                 "return_res must be one of the following when physical is True: 64, 32, 16"
             )
 
-    def _adjust_datetime(self, sampfrom):
+    def _adjust_datetime(self, sampfrom: int):
         """
         Adjust date and time fields to reflect user input if possible.
 
@@ -522,24 +522,26 @@ class BaseRecord(object):
         N/A
 
         """
-        if sampfrom:
-            dt_seconds = sampfrom / self.fs
-            if self.base_date and self.base_time:
-                self.base_datetime = datetime.datetime.combine(
-                    self.base_date, self.base_time
-                )
-                self.base_datetime += datetime.timedelta(seconds=dt_seconds)
-                self.base_date = self.base_datetime.date()
-                self.base_time = self.base_datetime.time()
-            # We can calculate the time even if there is no date
-            elif self.base_time:
-                tmp_datetime = datetime.datetime.combine(
-                    datetime.datetime.today().date(), self.base_time
-                )
-                self.base_time = (
-                    tmp_datetime + datetime.timedelta(seconds=dt_seconds)
-                ).time()
-            # Cannot calculate date or time if there is only date
+        if not sampfrom:
+            return
+
+        dt_seconds = sampfrom / self.fs
+        if self.base_date and self.base_time:
+            self.base_datetime = datetime.datetime.combine(
+                self.base_date, self.base_time
+            )
+            self.base_datetime += datetime.timedelta(seconds=dt_seconds)
+            self.base_date = self.base_datetime.date()
+            self.base_time = self.base_datetime.time()
+        # We can calculate the time even if there is no date
+        elif self.base_time:
+            tmp_datetime = datetime.datetime.combine(
+                datetime.datetime.today().date(), self.base_time
+            )
+            self.base_time = (
+                tmp_datetime + datetime.timedelta(seconds=dt_seconds)
+            ).time()
+        # Cannot calculate date or time if there is only date
 
 
 class Record(BaseRecord, _header.HeaderMixin, _signal.SignalMixin):
@@ -1651,7 +1653,7 @@ def rdheader(record_name, pn_dir=None, rd_segments=False):
     )
 
     # Get fields from record line
-    record_fields = _header._parse_record_line(header_lines[0])
+    record_fields = _header._parse_record_fields(header_lines[0])
 
     # Single segment header - Process signal specification lines
     if record_fields["n_seg"] is None:
