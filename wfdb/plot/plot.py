@@ -717,8 +717,8 @@ def _calc_ecg_grids(minsig, maxsig, sig_units, fs, maxt, time_units):
         The min value of the signal.
     maxsig : float
         The max value of the signal.
-    sig_units : list
-        The units used for plotting each signal.
+    sig_units : str
+        The physical units of the signal.
     fs : float
         The sampling frequency of the signal.
     maxt : float
