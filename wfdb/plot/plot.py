@@ -173,8 +173,8 @@ def plot_items(
         The frame frequency of the record. Used to calculate time intervals
         if `time_units` is 'frames'.
     time_units : str, optional
-        The x axis unit. Allowed options are: 'samples', 'seconds', 'minutes',
-        and 'hours'.
+        The x axis unit. Allowed options are: 'samples', 'frames',
+        'seconds', 'minutes', and 'hours'.
     sig_name : list, optional
         A list of strings specifying the signal names. Used with `sig_units`
         to form y labels, if `ylabel` is not set.
@@ -452,8 +452,8 @@ def _plot_signal(
     frame_freq : float
         The frame frequency of the record.
     time_units : str
-        The x axis unit. Allowed options are: 'samples', 'seconds', 'minutes',
-        and 'hours'.
+        The x axis unit. Allowed options are: 'samples', 'frames',
+        'seconds', 'minutes', and 'hours'.
     sig_style : list
         A list of strings, specifying the style of the matplotlib plot
         for each signal channel. The list length should match the number
@@ -496,6 +496,8 @@ def _plot_signal(
         except KeyError:
             if time_units == "samples":
                 t = np.linspace(0, ch_len - 1, ch_len)
+            elif time_units == "frames":
+                t = np.linspace(0, (ch_len - 1) * frame_freq / ch_freq, ch_len)
             else:
                 downsample_factor = {
                     "seconds": ch_freq,
@@ -545,8 +547,8 @@ def _plot_annotation(
     frame_freq : float
         The frame frequency of the record.
     time_units : str
-        The x axis unit. Allowed options are: 'samples', 'seconds', 'minutes',
-        and 'hours'.
+        The x axis unit. Allowed options are: 'samples', 'frames',
+        'seconds', 'minutes', and 'hours'.
     sig_style : list, optional
         A list of strings, specifying the style of the matplotlib plot
         for each signal channel. The list length should match the number
@@ -593,6 +595,8 @@ def _plot_annotation(
                 downsample_factor = 1
             else:
                 downsample_factor = afreq / sfreq
+        elif time_units == "frames":
+            downsample_factor = afreq / frame_freq
         else:
             downsample_factor = {
                 "seconds": float(afreq),
@@ -646,8 +650,8 @@ def _plot_ecg_grids(
     units : list
         The units used for plotting each signal.
     time_units : str
-        The x axis unit. Allowed options are: 'samples', 'seconds', 'minutes',
-        and 'hours'.
+        The x axis unit. Allowed options are: 'samples', 'frames',
+        'seconds', 'minutes', and 'hours'.
     axes : list
         The information needed for each subplot.
     sampling_freq : number or sequence, optional
@@ -680,6 +684,7 @@ def _plot_ecg_grids(
             auto_ylims[0],
             auto_ylims[1],
             units[ch],
+            frame_freq,
             sampling_freq[ch],
             auto_xlims[1],
             time_units,
@@ -710,7 +715,15 @@ def _plot_ecg_grids(
         axes[ch].set_ylim(auto_ylims)
 
 
-def _calc_ecg_grids(minsig, maxsig, sig_units, sampling_freq, maxt, time_units):
+def _calc_ecg_grids(
+    minsig,
+    maxsig,
+    sig_units,
+    frame_freq,
+    sampling_freq,
+    maxt,
+    time_units,
+):
     """
     Calculate tick intervals for ECG grids.
 
@@ -727,13 +740,15 @@ def _calc_ecg_grids(minsig, maxsig, sig_units, sampling_freq, maxt, time_units):
         The max value of the signal.
     sig_units : str
         The physical units of the signal.
+    frame_freq : float
+        The frame frequency of the record.
     sampling_freq : float
         The sampling frequency of the signal.
     maxt : float
         The max time of the signal.
     time_units : str
-        The x axis unit. Allowed options are: 'samples', 'seconds', 'minutes',
-        and 'hours'.
+        The x axis unit. Allowed options are: 'samples', 'frames',
+        'seconds', 'minutes', and 'hours'.
 
     Returns
     -------
@@ -751,6 +766,9 @@ def _calc_ecg_grids(minsig, maxsig, sig_units, sampling_freq, maxt, time_units):
     if time_units == "samples":
         majorx = 0.2 * sampling_freq
         minorx = 0.04 * sampling_freq
+    elif time_units == "frames":
+        majorx = 0.2 * frame_freq
+        minorx = 0.04 * frame_freq
     elif time_units == "seconds":
         majorx = 0.2
         minorx = 0.04
@@ -800,8 +818,8 @@ def _label_figure(
     n_subplots : int
         The number of subplots to generate.
     time_units : str, optional
-        The x axis unit. Allowed options are: 'samples', 'seconds', 'minutes',
-        and 'hours'.
+        The x axis unit. Allowed options are: 'samples', 'frames',
+        'seconds', 'minutes', and 'hours'.
     sig_name : list, optional
         A list of strings specifying the signal names. Used with `sig_units`
         to form y labels, if `ylabel` is not set.
@@ -901,8 +919,8 @@ def plot_wfdb(
     plot_sym : bool, optional
         Whether to plot the annotation symbols on the graph.
     time_units : str, optional
-        The x axis unit. Allowed options are: 'samples', 'seconds',
-        'minutes', and 'hours'.
+        The x axis unit. Allowed options are: 'samples', 'frames',
+        'seconds', 'minutes', and 'hours'.
     title : str, optional
         The title of the graph.
     sig_style : list, optional
