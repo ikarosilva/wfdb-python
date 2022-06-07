@@ -254,6 +254,17 @@ def plot_items(
     sampling_freq = _get_sampling_freq(sampling_freq, n_sig, frame_freq)
     ann_freq = _get_ann_freq(ann_freq, n_annot, frame_freq)
 
+    # If plotting a multi-frequency record in 'sharex' mode, the time units
+    # must be the same for all channels; therefore, if "samples" are
+    # requested, use "frames" instead.
+    if (
+        time_units == "samples"
+        and sharex
+        and frame_freq is not None
+        and any(f != frame_freq for f in sampling_freq)
+    ):
+        time_units = "frames"
+
     # Create figure
     fig, axes = _create_figure(n_subplots, sharex, sharey, figsize)
     try:
