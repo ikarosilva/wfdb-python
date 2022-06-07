@@ -1014,6 +1014,7 @@ def plot_wfdb(
         return_fig=return_fig,
         sampling_freq=sampling_freq,
         ann_freq=ann_freq,
+        sharex=True,
     )
 
 
