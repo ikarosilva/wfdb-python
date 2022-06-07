@@ -537,7 +537,6 @@ def _plot_annotation(
 ):
     """
     Plot annotations, possibly overlaid on signals.
-    ann_samp, n_annot, ann_sym, signal, n_sig, fs, time_units, ann_style, axes
 
     Parameters
     ----------
