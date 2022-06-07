@@ -121,7 +121,7 @@ def plot_items(
     signal=None,
     ann_samp=None,
     ann_sym=None,
-    fs=None,
+    frame_freq=None,
     time_units="samples",
     sig_name=None,
     sig_units=None,
@@ -169,10 +169,9 @@ def plot_items(
         corresponding to a different channel. List items should be lists of
         strings. The symbols are plotted over the corresponding `ann_samp`
         index locations.
-    fs : int, float, optional
-        The sampling frequency of the signals and/or annotations. Used to
-        calculate time intervals if `time_units` is not 'samples'. Also
-        required for plotting ECG grids.
+    frame_freq : int, float, optional
+        The frame frequency of the record. Used to calculate time intervals
+        if `time_units` is 'frames'.
     time_units : str, optional
         The x axis unit. Allowed options are: 'samples', 'seconds', 'minutes',
         and 'hours'.
@@ -217,11 +216,11 @@ def plot_items(
     sampling_freq : number or sequence, optional
         The sampling frequency or frequencies of the signals.  If this is a
         list, it must have the same length as the number of channels.  If
-        unspecified, defaults to `fs`.
+        unspecified, defaults to `frame_freq`.
     ann_freq : number or sequence, optional
         The sampling frequency or frequencies of the annotations.  If this
         is a list, it must have the same length as `ann_samp`.  If
-        unspecified, defaults to `fs`.
+        unspecified, defaults to `frame_freq`.
 
     Returns
     -------
@@ -252,8 +251,8 @@ def plot_items(
     sig_len, n_sig, n_annot, n_subplots = _get_plot_dims(signal, ann_samp)
 
     # Convert sampling_freq and ann_freq to lists if needed
-    sampling_freq = _get_sampling_freq(sampling_freq, n_sig, fs)
-    ann_freq = _get_ann_freq(ann_freq, n_annot, fs)
+    sampling_freq = _get_sampling_freq(sampling_freq, n_sig, frame_freq)
+    ann_freq = _get_ann_freq(ann_freq, n_annot, frame_freq)
 
     # Create figure
     fig, axes = _create_figure(n_subplots, sharex, sharey, figsize)
@@ -263,7 +262,7 @@ def plot_items(
                 signal,
                 sig_len,
                 n_sig,
-                fs,
+                frame_freq,
                 time_units,
                 sig_style,
                 axes,
@@ -277,7 +276,7 @@ def plot_items(
                 ann_sym,
                 signal,
                 n_sig,
-                fs,
+                frame_freq,
                 time_units,
                 ann_style,
                 axes,
@@ -288,7 +287,7 @@ def plot_items(
         if ecg_grids:
             _plot_ecg_grids(
                 ecg_grids,
-                fs,
+                frame_freq,
                 sig_units,
                 time_units,
                 axes,
@@ -426,7 +425,14 @@ def _create_figure(n_subplots, sharex, sharey, figsize):
 
 
 def _plot_signal(
-    signal, sig_len, n_sig, fs, time_units, sig_style, axes, sampling_freq=None
+    signal,
+    sig_len,
+    n_sig,
+    frame_freq,
+    time_units,
+    sig_style,
+    axes,
+    sampling_freq=None,
 ):
     """
     Plot signal channels.
@@ -443,8 +449,8 @@ def _plot_signal(
         The signal length (per channel) of the dat file.  Deprecated.
     n_sig : int
         The number of signals contained in the dat file.
-    fs : float
-        The sampling frequency of the record.
+    frame_freq : float
+        The frame frequency of the record.
     time_units : str
         The x axis unit. Allowed options are: 'samples', 'seconds', 'minutes',
         and 'hours'.
@@ -458,7 +464,7 @@ def _plot_signal(
     sampling_freq : number or sequence, optional
         The sampling frequency or frequencies of the signals.  If this is a
         list, it must have the same length as the number of channels.  If
-        unspecified, defaults to `fs`.
+        unspecified, defaults to `frame_freq`.
 
     Returns
     -------
@@ -475,7 +481,7 @@ def _plot_signal(
         sig_style = n_sig * sig_style
 
     # Convert sampling_freq to a list if needed
-    sampling_freq = _get_sampling_freq(sampling_freq, n_sig, fs)
+    sampling_freq = _get_sampling_freq(sampling_freq, n_sig, frame_freq)
 
     tarrays = {}
 
@@ -509,7 +515,7 @@ def _plot_annotation(
     ann_sym,
     signal,
     n_sig,
-    fs,
+    frame_freq,
     time_units,
     ann_style,
     axes,
@@ -536,8 +542,8 @@ def _plot_annotation(
         one-dimensional arrays (one for each channel).
     n_sig : int
         The number of signals contained in the dat file.
-    fs : float
-        The sampling frequency of the record.
+    frame_freq : float
+        The frame frequency of the record.
     time_units : str
         The x axis unit. Allowed options are: 'samples', 'seconds', 'minutes',
         and 'hours'.
@@ -551,11 +557,11 @@ def _plot_annotation(
     sampling_freq : number or sequence, optional
         The sampling frequency or frequencies of the signals.  If this is a
         list, it must have the same length as the number of channels.  If
-        unspecified, defaults to `fs`.
+        unspecified, defaults to `frame_freq`.
     ann_freq : number or sequence, optional
         The sampling frequency or frequencies of the annotations.  If this
         is a list, it must have the same length as `ann_samp`.  If
-        unspecified, defaults to `fs`.
+        unspecified, defaults to `frame_freq`.
 
     Returns
     -------
@@ -570,8 +576,8 @@ def _plot_annotation(
         ann_style = n_annot * ann_style
 
     # Convert sampling_freq and ann_freq to lists if needed
-    sampling_freq = _get_sampling_freq(sampling_freq, n_sig, fs)
-    ann_freq = _get_ann_freq(ann_freq, n_annot, fs)
+    sampling_freq = _get_sampling_freq(sampling_freq, n_sig, frame_freq)
+    ann_freq = _get_ann_freq(ann_freq, n_annot, frame_freq)
 
     # Plot the annotations
     for ch in range(n_annot):
@@ -625,7 +631,9 @@ def _plot_annotation(
                     )
 
 
-def _plot_ecg_grids(ecg_grids, fs, units, time_units, axes, sampling_freq=None):
+def _plot_ecg_grids(
+    ecg_grids, frame_freq, units, time_units, axes, sampling_freq=None
+):
     """
     Add ECG grids to the axes.
 
@@ -633,8 +641,8 @@ def _plot_ecg_grids(ecg_grids, fs, units, time_units, axes, sampling_freq=None):
     ----------
     ecg_grids : list, str
         Whether to add a grid for all the plots ('all') or not.
-    fs : float
-        The sampling frequency of the record.
+    frame_freq : float
+        The frame frequency of the record.
     units : list
         The units used for plotting each signal.
     time_units : str
@@ -645,7 +653,7 @@ def _plot_ecg_grids(ecg_grids, fs, units, time_units, axes, sampling_freq=None):
     sampling_freq : number or sequence, optional
         The sampling frequency or frequencies of the signals.  If this is a
         list, it must have the same length as the number of channels.  If
-        unspecified, defaults to `fs`.
+        unspecified, defaults to `frame_freq`.
 
     Returns
     -------
@@ -656,7 +664,7 @@ def _plot_ecg_grids(ecg_grids, fs, units, time_units, axes, sampling_freq=None):
         ecg_grids = range(0, len(axes))
 
     # Convert sampling_freq to a list if needed
-    sampling_freq = _get_sampling_freq(sampling_freq, len(axes), fs)
+    sampling_freq = _get_sampling_freq(sampling_freq, len(axes), frame_freq)
 
     for ch in ecg_grids:
         # Get the initial plot limits
@@ -702,7 +710,7 @@ def _plot_ecg_grids(ecg_grids, fs, units, time_units, axes, sampling_freq=None):
         axes[ch].set_ylim(auto_ylims)
 
 
-def _calc_ecg_grids(minsig, maxsig, sig_units, fs, maxt, time_units):
+def _calc_ecg_grids(minsig, maxsig, sig_units, sampling_freq, maxt, time_units):
     """
     Calculate tick intervals for ECG grids.
 
@@ -719,7 +727,7 @@ def _calc_ecg_grids(minsig, maxsig, sig_units, fs, maxt, time_units):
         The max value of the signal.
     sig_units : str
         The physical units of the signal.
-    fs : float
+    sampling_freq : float
         The sampling frequency of the signal.
     maxt : float
         The max time of the signal.
@@ -741,8 +749,8 @@ def _calc_ecg_grids(minsig, maxsig, sig_units, fs, maxt, time_units):
     """
     # Get the grid interval of the x axis
     if time_units == "samples":
-        majorx = 0.2 * fs
-        minorx = 0.04 * fs
+        majorx = 0.2 * sampling_freq
+        minorx = 0.04 * sampling_freq
     elif time_units == "seconds":
         majorx = 0.2
         minorx = 0.04
@@ -938,7 +946,7 @@ def plot_wfdb(
         signal,
         ann_samp,
         ann_sym,
-        fs,
+        frame_freq,
         ylabel,
         record_name,
         sig_units,
@@ -965,7 +973,7 @@ def plot_wfdb(
         signal=signal,
         ann_samp=ann_samp,
         ann_sym=ann_sym,
-        fs=fs,
+        frame_freq=frame_freq,
         time_units=time_units,
         ylabel=ylabel,
         title=(title or record_name),
@@ -1018,10 +1026,8 @@ def _get_wfdb_plot_items(record, annotation, plot_sym):
         corresponding to a different channel. List items should be lists of
         strings. The symbols are plotted over the corresponding `ann_samp`
         index locations.
-    fs : int, float
-        The sampling frequency of the signals and/or annotations. Used to
-        calculate time intervals if `time_units` is not 'samples'. Also
-        required for plotting ECG grids.
+    frame_freq : int, float
+        The frame frequency of the record.
     ylabel : list
         A list of strings specifying the final y labels. If this option is
         present, `sig_name` and `sig_units` will not be used for labels.
@@ -1056,7 +1062,7 @@ def _get_wfdb_plot_items(record, annotation, plot_sym):
         else:
             raise ValueError("The record has no signal to plot")
 
-        fs = record.fs
+        frame_freq = record.fs
         sig_name = [str(s) for s in record.sig_name]
         if physical:
             sig_units = [str(s) for s in record.units]
@@ -1065,7 +1071,7 @@ def _get_wfdb_plot_items(record, annotation, plot_sym):
         record_name = "Record: %s" % record.record_name
         ylabel = ["/".join(pair) for pair in zip(sig_name, sig_units)]
     else:
-        signal = fs = ylabel = record_name = sig_units = None
+        signal = frame_freq = ylabel = record_name = sig_units = None
 
     # Get annotation attributes
     if annotation:
@@ -1089,8 +1095,8 @@ def _get_wfdb_plot_items(record, annotation, plot_sym):
             ann_sym = None
 
         # Try to get fs from annotation if not already in record
-        if fs is None:
-            fs = annotation.fs
+        if frame_freq is None:
+            frame_freq = annotation.fs
 
         record_name = record_name or annotation.record_name
     else:
@@ -1139,7 +1145,7 @@ def _get_wfdb_plot_items(record, annotation, plot_sym):
             ann_sym = [a for a in ann_sym if a]
         ylabel = ["ch_%d/NU" % ch for ch in ann_chans]
 
-    return signal, ann_samp, ann_sym, fs, ylabel, record_name, sig_units
+    return signal, ann_samp, ann_sym, frame_freq, ylabel, record_name, sig_units
 
 
 def plot_all_records(directory=""):
